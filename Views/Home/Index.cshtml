@@ -1,0 +1,292 @@
+@model List<GhiChuPro.Models.Note>
+@{
+    ViewData["Title"] = "Ghi Chú Của Tôi";
+    var pinnedNotes = Model.Where(n => n.IsPinned).ToList();
+    var otherNotes = Model.Where(n => !n.IsPinned).ToList();
+}
+
+<div class="max-w-4xl mx-auto space-y-6 sm:space-y-8">
+    <!-- Quick Add Note Box (Google Keep style) - Responsive Form -->
+    <div class="bg-white rounded-2xl shadow-md border border-teal-100 p-4 transition-all focus-within:ring-2 focus-within:ring-teal-400">
+        <form asp-action="Create" method="post" id="createNoteForm">
+            @Html.AntiForgeryToken()
+            <input type="text" name="title" placeholder="Tiêu đề..." 
+                   class="w-full font-bold text-slate-800 placeholder-slate-400 focus:outline-none text-sm sm:text-base mb-2 px-1 py-1" />
+            
+            <textarea name="content" rows="3" placeholder="Tạo ghi chú công việc, ý tưởng..." 
+                      class="w-full text-xs sm:text-sm text-slate-700 placeholder-slate-400 focus:outline-none resize-none px-1 py-1"></textarea>
+
+            <!-- Start Date, End Date & Progress Bar settings -->
+            <div class="bg-slate-50/80 rounded-xl p-3 border border-slate-100 my-2 space-y-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-500 mb-1 flex items-center gap-1">
+                            <i class="ph-calendar-plus text-teal-600"></i> Ngày bắt đầu:
+                        </label>
+                        <input type="date" name="startDate" 
+                               class="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-teal-500" />
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-500 mb-1 flex items-center gap-1">
+                            <i class="ph-calendar-check text-rose-500"></i> Ngày kết thúc (Hạn chót):
+                        </label>
+                        <input type="date" name="endDate" 
+                               class="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-teal-500" />
+                    </div>
+                </div>
+
+                <!-- Progress slider -->
+                <div>
+                    <div class="flex items-center justify-between text-xs mb-1">
+                        <span class="font-semibold text-slate-600 flex items-center gap-1">
+                            <i class="ph-chart-pie text-teal-600"></i> Tiến độ hoàn thành:
+                        </span>
+                        <span id="createProgressLabel" class="font-bold text-teal-700">0%</span>
+                    </div>
+                    <input type="range" name="progress" id="createProgressInput" min="0" max="100" value="0" step="5"
+                           oninput="document.getElementById('createProgressLabel').innerText = this.value + '%'"
+                           class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-teal-500" />
+                </div>
+            </div>
+
+            <!-- Bottom Action Row -->
+            <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-100">
+                <!-- Color Picker & Actions -->
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="text-xs text-slate-400 font-medium">Màu:</span>
+                    <div class="flex items-center space-x-1.5">
+                        <label class="cursor-pointer" title="Trắng">
+                            <input type="radio" name="color" value="#ffffff" checked class="sr-only peer" />
+                            <span class="w-5 h-5 sm:w-6 sm:h-6 rounded-full inline-block border border-slate-300 peer-checked:ring-2 peer-checked:ring-teal-500 bg-white"></span>
+                        </label>
+                        <label class="cursor-pointer" title="Xanh ngọc nhạt">
+                            <input type="radio" name="color" value="#f0fdfa" class="sr-only peer" />
+                            <span class="w-5 h-5 sm:w-6 sm:h-6 rounded-full inline-block border border-teal-200 peer-checked:ring-2 peer-checked:ring-teal-500 bg-teal-50"></span>
+                        </label>
+                        <label class="cursor-pointer" title="Xanh lam ngọc">
+                            <input type="radio" name="color" value="#ccfbf1" class="sr-only peer" />
+                            <span class="w-5 h-5 sm:w-6 sm:h-6 rounded-full inline-block border border-teal-300 peer-checked:ring-2 peer-checked:ring-teal-500 bg-teal-100"></span>
+                        </label>
+                        <label class="cursor-pointer" title="Vàng tươi">
+                            <input type="radio" name="color" value="#fef9c3" class="sr-only peer" />
+                            <span class="w-5 h-5 sm:w-6 sm:h-6 rounded-full inline-block border border-yellow-200 peer-checked:ring-2 peer-checked:ring-teal-500 bg-yellow-100"></span>
+                        </label>
+                        <label class="cursor-pointer" title="Hồng cam">
+                            <input type="radio" name="color" value="#fee2e2" class="sr-only peer" />
+                            <span class="w-5 h-5 sm:w-6 sm:h-6 rounded-full inline-block border border-rose-200 peer-checked:ring-2 peer-checked:ring-teal-500 bg-rose-100"></span>
+                        </label>
+                        <label class="cursor-pointer" title="Tím lavender">
+                            <input type="radio" name="color" value="#e0e7ff" class="sr-only peer" />
+                            <span class="w-5 h-5 sm:w-6 sm:h-6 rounded-full inline-block border border-indigo-200 peer-checked:ring-2 peer-checked:ring-teal-500 bg-indigo-100"></span>
+                        </label>
+                    </div>
+
+                    <!-- Pin option -->
+                    <label class="inline-flex items-center ml-2 cursor-pointer text-xs text-slate-600 gap-1 hover:text-teal-600">
+                        <input type="checkbox" name="isPinned" value="true" class="rounded text-teal-600 focus:ring-teal-500" />
+                        <i class="ph-pin text-sm"></i> Ghim
+                    </label>
+                </div>
+
+                <button type="submit" class="w-full sm:w-auto px-5 py-2 text-xs sm:text-sm font-semibold text-white bg-teal-500 hover:bg-teal-600 active:bg-teal-700 rounded-xl shadow-sm transition-all shadow-teal-500/20 flex items-center justify-center gap-1.5">
+                    <i class="ph-plus font-bold text-base"></i> Lưu ghi chú
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Search box -->
+    <div class="relative">
+        <i class="ph-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-lg"></i>
+        <input type="text" id="searchInput" placeholder="Tìm kiếm nhanh ghi chú theo từ khóa..." 
+               class="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100 transition-all shadow-sm" />
+    </div>
+
+    <!-- Pinned Notes Section -->
+    @if (pinnedNotes.Any())
+    {
+        <div>
+            <h2 class="text-xs font-bold text-teal-800 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                <i class="ph-pin-fill text-teal-600"></i> Đã ghim (@pinnedNotes.Count)
+            </h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 note-grid">
+                @foreach (var note in pinnedNotes)
+                {
+                    @await Html.PartialAsync("_NoteCard", note)
+                }
+            </div>
+        </div>
+    }
+
+    <!-- Other Notes Section -->
+    <div>
+        @if (pinnedNotes.Any() && otherNotes.Any())
+        {
+            <h2 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">
+                Khác (@otherNotes.Count)
+            </h2>
+        }
+
+        @if (!Model.Any())
+        {
+            <div class="text-center py-12 sm:py-16 bg-white rounded-2xl border border-dashed border-teal-200 p-4">
+                <div class="w-14 h-14 sm:w-16 sm:h-16 mx-auto rounded-full bg-teal-50 flex items-center justify-center text-teal-500 mb-3">
+                    <i class="ph-notebook text-3xl"></i>
+                </div>
+                <h3 class="text-sm sm:text-base font-semibold text-slate-700">Chưa có ghi chú nào</h3>
+                <p class="text-xs text-slate-400 mt-1 max-w-sm mx-auto">Ghi lại suy nghĩ, công việc, thiết lập thời hạn và theo dõi tiến độ ở ô phía trên nhé!</p>
+            </div>
+        }
+        else
+        {
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 note-grid">
+                @foreach (var note in otherNotes)
+                {
+                    @await Html.PartialAsync("_NoteCard", note)
+                }
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Edit Note Modal (Responsive) -->
+<div id="editModal" class="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm hidden flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-4 sm:p-6 shadow-2xl border border-slate-100 relative my-8">
+        <form asp-action="Edit" method="post" id="editForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" id="editId" />
+            <input type="text" name="title" id="editTitle" placeholder="Tiêu đề..." 
+                   class="w-full font-bold text-slate-800 focus:outline-none text-sm sm:text-base mb-2 pb-1 border-b border-slate-100" />
+            
+            <textarea name="content" id="editContent" rows="4" placeholder="Nội dung ghi chú..." 
+                      class="w-full text-xs sm:text-sm text-slate-700 focus:outline-none resize-none mb-3"></textarea>
+
+            <!-- Edit Dates & Progress -->
+            <div class="bg-slate-50 rounded-xl p-3 border border-slate-100 mb-3 space-y-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-500 mb-1 flex items-center gap-1">
+                            <i class="ph-calendar-plus text-teal-600"></i> Ngày bắt đầu:
+                        </label>
+                        <input type="date" name="startDate" id="editStartDate" 
+                               class="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-teal-500" />
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-500 mb-1 flex items-center gap-1">
+                            <i class="ph-calendar-check text-rose-500"></i> Ngày kết thúc:
+                        </label>
+                        <input type="date" name="endDate" id="editEndDate" 
+                               class="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-teal-500" />
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex items-center justify-between text-xs mb-1">
+                        <span class="font-semibold text-slate-600 flex items-center gap-1">
+                            <i class="ph-chart-pie text-teal-600"></i> Tiến độ hoàn thành:
+                        </span>
+                        <span id="editProgressLabel" class="font-bold text-teal-700">0%</span>
+                    </div>
+                    <input type="range" name="progress" id="editProgressInput" min="0" max="100" step="5"
+                           oninput="document.getElementById('editProgressLabel').innerText = this.value + '%'"
+                           class="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-teal-500" />
+                </div>
+            </div>
+
+            <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-100">
+                <div class="flex items-center space-x-1.5">
+                    <label class="cursor-pointer">
+                        <input type="radio" name="color" value="#ffffff" id="editColorWhite" class="sr-only peer" />
+                        <span class="w-5 h-5 sm:w-6 sm:h-6 rounded-full inline-block border border-slate-300 peer-checked:ring-2 peer-checked:ring-teal-500 bg-white"></span>
+                    </label>
+                    <label class="cursor-pointer">
+                        <input type="radio" name="color" value="#f0fdfa" id="editColorTeal50" class="sr-only peer" />
+                        <span class="w-5 h-5 sm:w-6 sm:h-6 rounded-full inline-block border border-teal-200 peer-checked:ring-2 peer-checked:ring-teal-500 bg-teal-50"></span>
+                    </label>
+                    <label class="cursor-pointer">
+                        <input type="radio" name="color" value="#ccfbf1" id="editColorTeal100" class="sr-only peer" />
+                        <span class="w-5 h-5 sm:w-6 sm:h-6 rounded-full inline-block border border-teal-300 peer-checked:ring-2 peer-checked:ring-teal-500 bg-teal-100"></span>
+                    </label>
+                    <label class="cursor-pointer">
+                        <input type="radio" name="color" value="#fef9c3" id="editColorYellow" class="sr-only peer" />
+                        <span class="w-5 h-5 sm:w-6 sm:h-6 rounded-full inline-block border border-yellow-200 peer-checked:ring-2 peer-checked:ring-teal-500 bg-yellow-100"></span>
+                    </label>
+                    <label class="cursor-pointer">
+                        <input type="radio" name="color" value="#fee2e2" id="editColorRose" class="sr-only peer" />
+                        <span class="w-5 h-5 sm:w-6 sm:h-6 rounded-full inline-block border border-rose-200 peer-checked:ring-2 peer-checked:ring-teal-500 bg-rose-100"></span>
+                    </label>
+                    <label class="cursor-pointer">
+                        <input type="radio" name="color" value="#e0e7ff" id="editColorIndigo" class="sr-only peer" />
+                        <span class="w-5 h-5 sm:w-6 sm:h-6 rounded-full inline-block border border-indigo-200 peer-checked:ring-2 peer-checked:ring-teal-500 bg-indigo-100"></span>
+                    </label>
+
+                    <label class="inline-flex items-center ml-2 cursor-pointer text-xs text-slate-600 gap-1">
+                        <input type="checkbox" name="isPinned" id="editIsPinned" value="true" class="rounded text-teal-600 focus:ring-teal-500" />
+                        <i class="ph-pin"></i> Ghim
+                    </label>
+                </div>
+
+                <div class="flex items-center space-x-2 w-full sm:w-auto justify-end">
+                    <button type="button" onclick="closeEditModal()" class="px-3.5 py-1.5 text-xs font-medium text-slate-500 hover:text-slate-700 rounded-lg">
+                        Đóng
+                    </button>
+                    <button type="submit" class="px-4 py-1.5 text-xs font-semibold text-white bg-teal-500 hover:bg-teal-600 rounded-lg shadow-sm">
+                        Lưu thay đổi
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Realtime Search
+        document.getElementById('searchInput')?.addEventListener('input', function(e) {
+            const query = e.target.value.toLowerCase().trim();
+            document.querySelectorAll('.note-card').forEach(card => {
+                const title = card.getAttribute('data-title') || '';
+                const content = card.getAttribute('data-content') || '';
+                if (title.includes(query) || content.includes(query)) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+
+        // Edit Modal
+        function openEditModal(id, title, content, color, isPinned, startDate, endDate, progress) {
+            document.getElementById('editId').value = id;
+            document.getElementById('editTitle').value = title;
+            document.getElementById('editContent').value = content;
+            document.getElementById('editIsPinned').checked = isPinned === true || isPinned === 'True';
+            document.getElementById('editStartDate').value = startDate || '';
+            document.getElementById('editEndDate').value = endDate || '';
+            
+            const p = progress !== undefined ? progress : 0;
+            document.getElementById('editProgressInput').value = p;
+            document.getElementById('editProgressLabel').innerText = p + '%';
+
+            // Select color radio
+            const radios = document.getElementsByName('color');
+            for (let r of radios) {
+                if (r.value === color) r.checked = true;
+            }
+
+            document.getElementById('editModal').classList.remove('hidden');
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').classList.add('hidden');
+        }
+
+        // Close modal on click outside
+        window.addEventListener('click', function(e) {
+            const modal = document.getElementById('editModal');
+            if (e.target === modal) {
+                closeEditModal();
+            }
+        });
+    </script>
+}

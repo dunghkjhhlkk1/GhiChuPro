@@ -1,0 +1,104 @@
+@model GhiChuPro.Models.Note
+
+<div class="note-card relative rounded-2xl p-4 shadow-sm hover:shadow-md transition-all border border-black/5 flex flex-col justify-between group"
+     style="background-color: @Model.Color;"
+     data-title="@Model.Title.ToLower()"
+     data-content="@Model.Content.ToLower()">
+    
+    <div>
+        <!-- Card Header: Title + Pin Button -->
+        <div class="flex items-start justify-between gap-2 mb-2">
+            @if (!string.IsNullOrWhiteSpace(Model.Title))
+            {
+                <h3 class="font-bold text-slate-800 text-sm sm:text-base leading-snug break-words flex-1">@Model.Title</h3>
+            }
+            else
+            {
+                <span class="flex-1"></span>
+            }
+
+            <form asp-action="TogglePin" method="post" class="inline">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+                <button type="submit" title="@(Model.IsPinned ? "Bỏ ghim" : "Ghim")" 
+                        class="p-1 rounded-full hover:bg-black/10 transition-colors @(Model.IsPinned ? "text-teal-700" : "text-slate-400 opacity-60 group-hover:opacity-100")">
+                    <i class="@(Model.IsPinned ? "ph-pin-fill" : "ph-pin") text-base"></i>
+                </button>
+            </form>
+        </div>
+
+        <!-- Dates (Start - End) if set -->
+        @if (Model.StartDate.HasValue || Model.EndDate.HasValue)
+        {
+            <div class="flex flex-wrap items-center gap-1.5 mb-2.5 text-[11px] font-medium text-slate-600 bg-black/5 px-2.5 py-1 rounded-lg w-fit">
+                <i class="ph-calendar-blank text-xs text-teal-700"></i>
+                @if (Model.StartDate.HasValue)
+                {
+                    <span>@Model.StartDate.Value.ToString("dd/MM/yyyy")</span>
+                }
+                else
+                {
+                    <span>Bắt đầu: --</span>
+                }
+                <span>→</span>
+                @if (Model.EndDate.HasValue)
+                {
+                    <span class="@(Model.EndDate.Value.Date < DateTime.UtcNow.Date && Model.Progress < 100 ? "text-rose-600 font-semibold" : "")">
+                        @Model.EndDate.Value.ToString("dd/MM/yyyy")
+                    </span>
+                }
+                else
+                {
+                    <span>Kết thúc: --</span>
+                }
+            </div>
+        }
+
+        <!-- Progress bar (% hoàn thành) -->
+        <div class="mb-3 bg-black/5 p-2 rounded-xl border border-black/5">
+            <div class="flex items-center justify-between text-[11px] mb-1 font-semibold">
+                <span class="text-slate-600 flex items-center gap-1">
+                    <i class="ph-chart-pie-slice text-xs text-teal-700"></i> Tiến độ
+                </span>
+                <span class="@(Model.Progress == 100 ? "text-emerald-700 font-bold" : "text-teal-800")">
+                    @Model.Progress% @(Model.Progress == 100 ? "✓ Hoàn thành" : "")
+                </span>
+            </div>
+            <div class="w-full bg-black/10 h-2 rounded-full overflow-hidden">
+                <div class="h-full rounded-full transition-all duration-300 @(Model.Progress == 100 ? "bg-emerald-500" : Model.Progress >= 50 ? "bg-teal-500" : "bg-amber-500")" 
+                     style="width: @Model.Progress%;"></div>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="text-xs sm:text-sm text-slate-700 whitespace-pre-line leading-relaxed break-words mb-4">
+            @Model.Content
+        </div>
+    </div>
+
+    <!-- Card Footer / Actions -->
+    <div class="flex items-center justify-between pt-2 border-t border-black/5 opacity-80 group-hover:opacity-100 transition-opacity text-slate-400">
+        <span class="text-[10px] text-slate-400">
+            @Model.UpdatedAt.ToLocalTime().ToString("dd/MM HH:mm")
+        </span>
+
+        <div class="flex items-center space-x-1">
+            <!-- Edit button -->
+            <button type="button" 
+                    onclick="openEditModal(@Model.Id, '@JavaScriptEncoder.Default.Encode(Model.Title)', '@JavaScriptEncoder.Default.Encode(Model.Content)', '@Model.Color', '@Model.IsPinned', '@(Model.StartDate?.ToString("yyyy-MM-dd") ?? "")', '@(Model.EndDate?.ToString("yyyy-MM-dd") ?? "")', @Model.Progress)" 
+                    title="Chỉnh sửa"
+                    class="p-1.5 hover:text-teal-700 hover:bg-black/5 rounded-lg transition-colors">
+                <i class="ph-pencil text-sm"></i>
+            </button>
+
+            <!-- Delete button -->
+            <form asp-action="Delete" method="post" class="inline" onsubmit="return confirm('Anh có chắc muốn xóa ghi chú này không?');">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+                <button type="submit" title="Xóa ghi chú" class="p-1.5 hover:text-rose-600 hover:bg-black/5 rounded-lg transition-colors">
+                    <i class="ph-trash text-sm"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
